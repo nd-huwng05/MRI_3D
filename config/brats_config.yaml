@@ -1,0 +1,14 @@
+data:
+  raw_dir: "/mnt/d/research/medical_anomaly_detection/data/raw_data/BraTS2021/BraTS2021_Training_Data"
+  output: "/mnt/d/research/medical_anomaly_detection/data/processed_data/BraTS2021"
+  modality: "t2"
+  slice_threshold: 0.05
+  image_size: 256
+  train_ratio: 0.7
+  validate_ratio: 0.1
+  test_ratio: 0.2
+  seed: 42
+
+train:
+  anomaly_prob: 1
+  mode: 'train'
