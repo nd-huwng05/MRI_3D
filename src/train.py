@@ -11,15 +11,15 @@ from torch.utils.tensorboard import SummaryWriter
 from torchmetrics.classification import BinaryAUROC, BinaryF1Score, BinaryJaccardIndex
 from tqdm import tqdm
 
-from src.data.dataset import BraTSPoissonDataset
-from src.models.LADN import LatentDiffusion
-from src.utils.helpers import visualization
+from data.dataset import BraTSPoissonDataset
+from models.LADN import LatentDiffusion
+from utils.helpers import visualization
 
 
 def train(args):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("Device used: ", device)
-    print("Loading config.....\n",vars(args))
+    # print("Loading config.....\n",vars(args))
 
     os.makedirs(args.checkpoint_dir, exist_ok=True)
     os.makedirs(args.log_dir, exist_ok=True)
@@ -39,12 +39,12 @@ def train(args):
     optimizer = optim.AdamW(model.parameters(), lr=float(args.lr), weight_decay=float(args.weight_decay))
 
     # Pixel-level metrics
-    pixel_auroc = BinaryAUROC().to(device)
-    pixel_dice = BinaryF1Score().to(device)  # F1 Score chính là Dice
-    pixel_iou = BinaryJaccardIndex().to(device)
+    pixel_auroc = BinaryAUROC(thresholds=3000)
+    pixel_dice = BinaryF1Score() # F1 Score chính là Dice
+    pixel_iou = BinaryJaccardIndex()
 
     # Image-level metrics
-    image_auroc = BinaryAUROC().to(device)
+    image_auroc = BinaryAUROC()
 
     start_epoch = 0
     best_pixel_auroc = 0.0
@@ -126,7 +126,7 @@ def train(args):
 
         sample_imgs, sample_healed, sample_maps, sample_masks = None, None, None, None
         with torch.no_grad():
-            for i, batch in enumerate(tqdm(val_dataloader, desc="[Val] Epoch {epoch+1}/{args.epochs}")):
+            for i, batch in enumerate(tqdm(val_dataloader, desc=f"[Val] Epoch {epoch+1}/{args.epochs}")):
                 images = batch['image'].to(device)
                 masks = batch['mask'].to(device).long()
                 labels = batch['label'].to(device).long()
@@ -149,15 +149,16 @@ def train(args):
                 anomaly_map = torch.mean(diff, dim=1, keepdim=True)
                 anomaly_map = torch.nn.functional.avg_pool2d(anomaly_map, 5, stride=1, padding=2)
 
-                preds_flat = anomaly_map.view(-1)
-                targets_flat = masks.view(-1)
+                preds_flat = anomaly_map.view(-1).cpu()
+                targets_flat = masks.view(-1).cpu()
 
                 pixel_auroc.update(preds_flat, targets_flat)
                 pixel_dice.update((preds_flat > 0.1).long(), targets_flat)  # 0.1
                 pixel_iou.update((preds_flat > 0.1).long(), targets_flat)
 
-                max_scores = anomaly_map.view(B, -1).max(dim=1)[0]
-                image_auroc.update(max_scores, labels)
+                max_scores = anomaly_map.view(B, -1).max(dim=1)[0].cpu()
+                labels_cpu = labels.cpu()
+                image_auroc.update(max_scores, labels_cpu)
 
                 if i == 0:
                     sample_imgs, sample_healed, sample_maps, sample_masks = images, healed_images, anomaly_map, masks
@@ -203,5 +204,6 @@ if __name__ == "__main__":
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
+    print(config)
     args = argparse.Namespace(**config["data"], **config["train"])
     train(args)

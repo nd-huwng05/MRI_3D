@@ -10,10 +10,10 @@ data:
   seed: 42
 
 train:
-  anomaly_prob: 1
+  anomaly_prob: 0.5
   mode: 'train'
   epochs: 100
-  batch_size: 8
+  batch_size: 32
   lr: 1e-4
   weight_decay: 1e-5
   latent_dim: 4
