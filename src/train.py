@@ -39,7 +39,7 @@ def train(args):
     optimizer = optim.AdamW(model.parameters(), lr=float(args.lr), weight_decay=float(args.weight_decay))
 
     # Pixel-level metrics
-    pixel_auroc = BinaryAUROC(thresholds=3000)
+    pixel_auroc = BinaryAUROC()
     pixel_dice = BinaryF1Score() # F1 Score chính là Dice
     pixel_iou = BinaryJaccardIndex()
 
