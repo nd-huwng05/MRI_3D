@@ -1,6 +1,6 @@
 data:
   raw_dir: "/mnt/d/research/medical_anomaly_detection/data/raw_data/BraTS2021/BraTS2021_Training_Data"
-  output: "/mnt/d/research/medical_anomaly_detection/data/processed_data/BraTS2021"
+  data_dir: "/mnt/d/research/medical_anomaly_detection/data/processed_data/BraTS2021"
   modality: "t2"
   slice_threshold: 0.05
   image_size: 256
@@ -12,3 +12,11 @@ data:
 train:
   anomaly_prob: 1
   mode: 'train'
+  epochs: 100
+  batch_size: 8
+  lr: 1e-4
+  weight_decay: 1e-5
+  latent_dim: 4
+  checkpoint_dir: "/mnt/d/research/medical_anomaly_detection/code/MRI_3D/checkpoint"
+  log_dir: "/mnt/d/research/medical_anomaly_detection/code/MRI_3D/src/log"
+  resume_path: null

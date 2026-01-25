@@ -232,7 +232,7 @@ if __name__ == '__main__':
 
     if os.path.exists(args.config):
         cfg = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
-        dataset = BraTSPoissonDataset(root_path=cfg['data']['output'], mode='train', anomaly_prob=1.0)
+        dataset = BraTSPoissonDataset(root_path=cfg['data']['data_dir'], mode='train', anomaly_prob=1.0)
         print(f"Dataset Loaded: {len(dataset)} images.")
 
         if len(dataset) > 0:
