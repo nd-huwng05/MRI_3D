@@ -3,14 +3,11 @@ import sys
 import argparse
 import torch
 import yaml
-import cv2
-import numpy as np
-import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torchmetrics.classification import BinaryAUROC
 from tqdm import tqdm
 
-from src.utils.helpers import save_visualization
+from utils.helpers import save_visualization
 
 sys.path.append(os.getcwd())
 

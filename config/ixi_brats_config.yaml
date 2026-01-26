@@ -13,9 +13,6 @@ train:
   anomaly_prob: 0.5
   mode: 'train'
   epochs: 100
-  training_strategy: "sequential"
-  vae_epochs: 2
-  diff_epochs: 2
   batch_size: 32
   lr: 1e-4
   weight_decay: 1e-5
@@ -24,4 +21,4 @@ train:
   checkpoint_best: null
   log_dir: "/mnt/d/research/medical_anomaly_detection/code/MRI_3D/src/log"
   resume_path: null
-  healing_t: 500
+  healing_t: 300
