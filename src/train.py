@@ -39,12 +39,12 @@ def train(args):
     optimizer = optim.AdamW(model.parameters(), lr=float(args.lr), weight_decay=float(args.weight_decay))
 
     # Pixel-level metrics
-    pixel_auroc = BinaryAUROC()
-    pixel_dice = BinaryF1Score() # F1 Score chính là Dice
-    pixel_iou = BinaryJaccardIndex()
+    pixel_auroc = BinaryAUROC(thresholds=2000).to(device)
+    pixel_dice = BinaryF1Score().to(device) # F1 Score chính là Dice
+    pixel_iou = BinaryJaccardIndex().to(device)
 
     # Image-level metrics
-    image_auroc = BinaryAUROC()
+    image_auroc = BinaryAUROC().to(device)
 
     start_epoch = 0
     best_pixel_auroc = 0.0
@@ -132,11 +132,12 @@ def train(args):
                 labels = batch['label'].to(device).long()
                 B = images.shape[0]
 
+                t_healing = 300
                 _, _, _, latents = model.vae(images)
-                t_val = torch.full((B,), 400, device=device).long()
+                t_val = torch.full((B,), t_healing, device=device).long()
                 noise = torch.randn_like(latents)
-                alpha = 1 - (400 / 1000.0)
-                sigma = 400 / 1000.0
+                alpha = 1 - (t_healing / 1000.0)
+                sigma = t_healing / 1000.0
                 noisy_latents = latents * alpha + noise * sigma
 
                 # Denoise
@@ -149,15 +150,20 @@ def train(args):
                 anomaly_map = torch.mean(diff, dim=1, keepdim=True)
                 anomaly_map = torch.nn.functional.avg_pool2d(anomaly_map, 5, stride=1, padding=2)
 
-                preds_flat = anomaly_map.view(-1).cpu()
-                targets_flat = masks.view(-1).cpu()
+                min_val = anomaly_map.min()
+                max_val = anomaly_map.max()
+                if max_val - min_val > 1e-6:
+                    anomaly_map = (anomaly_map - min_val) / (max_val - min_val)
+
+                preds_flat = anomaly_map.view(-1)
+                targets_flat = masks.view(-1)
 
                 pixel_auroc.update(preds_flat, targets_flat)
                 pixel_dice.update((preds_flat > 0.1).long(), targets_flat)  # 0.1
                 pixel_iou.update((preds_flat > 0.1).long(), targets_flat)
 
-                max_scores = anomaly_map.view(B, -1).max(dim=1)[0].cpu()
-                labels_cpu = labels.cpu()
+                max_scores = anomaly_map.view(B, -1).max(dim=1)[0]
+                labels_cpu = labels
                 image_auroc.update(max_scores, labels_cpu)
 
                 if i == 0:
@@ -204,6 +210,6 @@ if __name__ == "__main__":
     with open(args.config, 'r') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
 
-    print(config)
+    print(yaml.dump(config, sort_keys=False, allow_unicode=True, default_flow_style=False))
     args = argparse.Namespace(**config["data"], **config["train"])
     train(args)
