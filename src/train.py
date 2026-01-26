@@ -103,7 +103,9 @@ def train(args):
             loss.backward()
             optimizer.step()
 
-            writer.add_scalar('Train/Loss_Total', loss.item(), global_step)
+            writer.add_scalar('Train/Loss_vae', vae_loss.item(), global_step)
+            writer.add_scalar('Train/Loss_diff', diff_loss.item(), global_step)
+            writer.add_scalar('Train/Loss_total', loss.item(), global_step)
             global_step += 1
             pbar.set_postfix({"vae": f"{vae_loss.item():.4f}", "diff": f"{diff_loss.item():.4f}"})
 
@@ -132,7 +134,7 @@ def train(args):
                 labels = batch['label'].to(device).long()
                 B = images.shape[0]
 
-                t_healing = 300
+                t_healing = args.healing_t
                 _, _, _, latents = model.vae(images)
                 t_val = torch.full((B,), t_healing, device=device).long()
                 noise = torch.randn_like(latents)
